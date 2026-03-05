@@ -1,0 +1,1300 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>🃏 HiGH&LOW クイズ</title>
+<meta name="description" content="みんなうろ覚えしてることをHiGH&LOWで当てるクイズゲーム！">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Zen+Maru+Gothic:wght@700;900&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #0a0a1a;
+  --card: #151530;
+  --accent: #ff6b35;
+  --accent2: #00e5ff;
+  --high: #ff4081;
+  --same: #ffeb3b;
+  --low: #448aff;
+  --success: #00e676;
+  --fail: #ff1744;
+  --text: #ffffff;
+  --dim: #8888aa;
+}
+
+body {
+  font-family: 'Noto Sans JP', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100dvh;
+  overflow: hidden;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.screen {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100dvh;
+  padding: 20px;
+}
+.screen.active { display: flex; }
+
+/* ===== Title Screen ===== */
+#title-screen {
+  gap: 16px;
+  background: radial-gradient(ellipse at center, #1a1a3a 0%, var(--bg) 70%);
+}
+
+.game-logo {
+  font-family: 'Zen Maru Gothic', sans-serif;
+  font-size: clamp(2.2rem, 8vw, 4.5rem);
+  font-weight: 900;
+  text-align: center;
+  line-height: 1.2;
+}
+.logo-high {
+  background: linear-gradient(135deg, var(--high), #ff8a80);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.logo-and {
+  color: var(--same);
+  -webkit-text-fill-color: var(--same);
+  font-size: 0.6em;
+}
+.logo-low {
+  background: linear-gradient(135deg, var(--low), var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.game-subtitle {
+  color: var(--dim);
+  font-size: clamp(0.85rem, 2.5vw, 1.1rem);
+  text-align: center;
+  margin-bottom: 6px;
+}
+
+.btn {
+  padding: 16px 48px;
+  font-size: 1.3rem;
+  font-weight: 700;
+  border: none;
+  border-radius: 60px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+.btn:active { transform: scale(0.95); }
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent), #ff8a50);
+  color: #fff;
+  box-shadow: 0 4px 20px rgba(255,107,53,0.4);
+}
+.btn-secondary {
+  background: transparent;
+  color: var(--accent2);
+  border: 2px solid var(--accent2);
+  padding: 12px 36px;
+  font-size: 1rem;
+}
+
+.best-score-display {
+  color: var(--accent2);
+  font-size: 1rem;
+  margin-top: 4px;
+}
+
+/* ===== Sound Toggle ===== */
+.sound-toggle {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  z-index: 200;
+  background: var(--card);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: var(--text);
+  font-size: 1.4rem;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.sound-toggle:active { transform: scale(0.9); }
+
+/* ===== Countdown ===== */
+#countdown-screen { background: var(--bg); }
+.countdown-number {
+  font-size: clamp(8rem, 30vw, 16rem);
+  font-weight: 900;
+  animation: countPulse 0.6s ease-out;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+@keyframes countPulse {
+  0% { transform: scale(2); opacity: 0; }
+  50% { opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* ===== Game Screen ===== */
+#game-screen {
+  padding: 0;
+  position: relative;
+  background: var(--bg);
+  gap: 0;
+}
+
+.game-hud {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px;
+  background: rgba(0,0,0,0.5);
+  z-index: 10;
+  font-size: clamp(0.8rem, 2vw, 0.95rem);
+}
+.hud-score { color: var(--accent); font-weight: 700; }
+.hud-combo { color: var(--accent2); font-weight: 700; }
+.hud-progress { color: var(--dim); font-weight: 700; }
+
+.timer-bar {
+  position: absolute;
+  top: 44px; left: 0; right: 0;
+  height: 4px;
+  background: rgba(255,255,255,0.1);
+  z-index: 10;
+}
+.timer-bar-fill {
+  height: 100%;
+  background: var(--accent2);
+  transition: width 0.05s linear;
+}
+
+.question-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 52px 16px 8px;
+  width: 100%;
+  gap: 6px;
+}
+
+.q-category {
+  font-size: clamp(0.75rem, 2vw, 0.9rem);
+  color: var(--dim);
+  background: rgba(255,255,255,0.06);
+  padding: 4px 14px;
+  border-radius: 20px;
+}
+
+.q-main-text {
+  font-size: clamp(1rem, 3.2vw, 1.6rem);
+  font-weight: 700;
+  text-align: center;
+  line-height: 1.4;
+  color: var(--text);
+  min-height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.q-compare {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 8px 0;
+}
+
+.q-value-box {
+  background: var(--card);
+  border: 2px solid rgba(255,255,255,0.15);
+  border-radius: 16px;
+  padding: 12px 20px;
+  text-align: center;
+  min-width: 100px;
+}
+.q-value-label {
+  font-size: clamp(0.7rem, 1.8vw, 0.85rem);
+  color: var(--dim);
+  margin-bottom: 4px;
+}
+.q-value-num {
+  font-size: clamp(1.6rem, 5vw, 2.5rem);
+  font-weight: 900;
+  color: var(--accent2);
+}
+.q-value-unknown .q-value-num {
+  background: linear-gradient(135deg, var(--high), var(--low));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.q-vs {
+  font-size: clamp(1.2rem, 3vw, 1.8rem);
+  font-weight: 900;
+  color: var(--same);
+}
+
+.q-hint {
+  font-size: clamp(0.75rem, 2vw, 0.9rem);
+  color: var(--dim);
+  text-align: center;
+  margin-top: 4px;
+}
+
+/* ===== 3-Choice Buttons ===== */
+.choices-row {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  max-width: 420px;
+  padding: 0 8px 20px;
+}
+
+.choice-btn {
+  flex: 1;
+  border: 2px solid rgba(255,255,255,0.15);
+  border-radius: 16px;
+  background: var(--card);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 8px;
+  cursor: pointer;
+  transition: all 0.12s;
+  -webkit-tap-highlight-color: transparent;
+  gap: 4px;
+}
+.choice-btn:active { transform: scale(0.92); }
+
+.choice-icon {
+  font-size: clamp(1.8rem, 6vw, 2.8rem);
+}
+.choice-label {
+  font-size: clamp(0.85rem, 2.2vw, 1.1rem);
+  font-weight: 900;
+}
+
+.choice-btn[data-answer="high"] {
+  border-color: rgba(255,64,129,0.4);
+}
+.choice-btn[data-answer="high"] .choice-icon { color: var(--high); }
+.choice-btn[data-answer="high"] .choice-label { color: var(--high); }
+
+.choice-btn[data-answer="same"] {
+  border-color: rgba(255,235,59,0.4);
+}
+.choice-btn[data-answer="same"] .choice-icon { color: var(--same); }
+.choice-btn[data-answer="same"] .choice-label { color: var(--same); }
+
+.choice-btn[data-answer="low"] {
+  border-color: rgba(68,138,255,0.4);
+}
+.choice-btn[data-answer="low"] .choice-icon { color: var(--low); }
+.choice-btn[data-answer="low"] .choice-label { color: var(--low); }
+
+.choice-btn.correct {
+  background: var(--success) !important;
+  border-color: var(--success) !important;
+}
+.choice-btn.correct .choice-icon,
+.choice-btn.correct .choice-label { color: #fff !important; }
+
+.choice-btn.wrong {
+  background: var(--fail) !important;
+  border-color: var(--fail) !important;
+}
+.choice-btn.wrong .choice-icon,
+.choice-btn.wrong .choice-label { color: #fff !important; }
+
+/* Answer reveal */
+.answer-reveal {
+  position: absolute;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.85);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 12px;
+  padding: 10px 20px;
+  font-size: clamp(0.9rem, 2.5vw, 1.1rem);
+  font-weight: 700;
+  color: var(--accent2);
+  text-align: center;
+  z-index: 20;
+  animation: revealIn 0.3s ease-out;
+  white-space: nowrap;
+}
+@keyframes revealIn {
+  0% { transform: translateX(-50%) translateY(10px); opacity: 0; }
+  100% { transform: translateX(-50%) translateY(0); opacity: 1; }
+}
+
+/* Flash overlay */
+.flash-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none;
+  z-index: 100;
+  animation: flash 0.3s ease-out forwards;
+}
+.flash-correct { background: rgba(0,230,118,0.25); }
+.flash-wrong { background: rgba(255,23,68,0.4); }
+@keyframes flash {
+  0% { opacity: 1; } 100% { opacity: 0; }
+}
+
+/* Combo popup */
+.combo-popup {
+  position: fixed;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: clamp(2rem, 8vw, 4rem);
+  font-weight: 900;
+  pointer-events: none;
+  z-index: 50;
+  animation: comboAnim 0.8s ease-out forwards;
+  color: var(--accent2);
+  text-shadow: 0 0 30px rgba(0,229,255,0.6);
+}
+@keyframes comboAnim {
+  0% { transform: translate(-50%,-50%) scale(0.5); opacity: 0; }
+  30% { transform: translate(-50%,-50%) scale(1.3); opacity: 1; }
+  100% { transform: translate(-50%,-80%) scale(1); opacity: 0; }
+}
+
+/* ===== Result Screen ===== */
+#result-screen {
+  gap: 12px;
+  background: radial-gradient(ellipse at center, #1a1a3a 0%, var(--bg) 70%);
+}
+.result-label { font-size: 1.2rem; color: var(--dim); }
+.result-score {
+  font-size: clamp(3.5rem, 14vw, 7rem);
+  font-weight: 900;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.result-stats {
+  text-align: center;
+  color: var(--dim);
+  line-height: 2;
+  font-size: 1rem;
+}
+.result-new-record {
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 1.2rem;
+  animation: pulse 1s infinite;
+}
+@keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.5; } }
+
+.name-input-area {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+  width: 100%;
+  max-width: 300px;
+}
+.name-input-area input {
+  flex: 1;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 2px solid rgba(255,255,255,0.2);
+  background: var(--card);
+  color: var(--text);
+  font-size: 1rem;
+  font-family: inherit;
+  outline: none;
+}
+.name-input-area input:focus { border-color: var(--accent2); }
+
+.save-status {
+  font-size: 0.85rem;
+  margin-top: 2px;
+  min-height: 20px;
+}
+
+.result-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.btn-share {
+  background: #000;
+  color: #fff;
+  border: 2px solid #333;
+  padding: 12px 36px;
+  font-size: 1rem;
+  border-radius: 60px;
+  cursor: pointer;
+  font-weight: 700;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+.btn-share:active { transform: scale(0.95); }
+
+/* ===== Ranking Screen ===== */
+#ranking-screen {
+  gap: 16px;
+  padding: 20px;
+  overflow-y: auto;
+  justify-content: flex-start;
+  padding-top: 40px;
+}
+.ranking-title {
+  font-size: 1.8rem;
+  font-weight: 900;
+  color: var(--accent2);
+  margin-bottom: 8px;
+}
+.ranking-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.ranking-tab {
+  padding: 8px 20px;
+  border-radius: 20px;
+  border: 2px solid rgba(255,255,255,0.15);
+  background: transparent;
+  color: var(--dim);
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.9rem;
+}
+.ranking-tab.active {
+  background: var(--accent2);
+  color: #000;
+  border-color: var(--accent2);
+}
+.ranking-list {
+  width: 100%;
+  max-width: 400px;
+}
+.ranking-item {
+  display: flex;
+  align-items: center;
+  padding: 14px 16px;
+  background: var(--card);
+  border-radius: 12px;
+  margin-bottom: 8px;
+  gap: 12px;
+}
+.rank-num {
+  font-size: 1.4rem;
+  font-weight: 900;
+  min-width: 40px;
+  text-align: center;
+}
+.rank-1 { color: #ffd700; }
+.rank-2 { color: #c0c0c0; }
+.rank-3 { color: #cd7f32; }
+.rank-name { flex: 1; font-weight: 700; }
+.rank-score {
+  color: var(--accent2);
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+.rank-date {
+  color: var(--dim);
+  font-size: 0.75rem;
+}
+.ranking-loading {
+  text-align: center;
+  color: var(--dim);
+  padding: 40px;
+}
+.ranking-loading .spinner {
+  display: inline-block;
+  width: 24px; height: 24px;
+  border: 3px solid var(--dim);
+  border-top-color: var(--accent2);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<!-- Sound Toggle -->
+<button class="sound-toggle" id="sound-toggle" onclick="toggleSound()">🔊</button>
+
+<!-- Title Screen -->
+<div id="title-screen" class="screen active">
+  <div class="game-logo">
+    🃏<br>
+    <span class="logo-high">HiGH</span><span class="logo-and">&</span><span class="logo-low">LOW</span>
+  </div>
+  <div class="game-subtitle">みんなが うろ覚えしてることを<br>ハイ＆ローで当てろ！</div>
+  <button class="btn btn-primary" onclick="startGame()">スタート</button>
+  <button class="btn btn-secondary" onclick="showRanking()">🏆 ランキング</button>
+  <div class="best-score-display" id="best-score-display"></div>
+</div>
+
+<!-- Countdown Screen -->
+<div id="countdown-screen" class="screen">
+  <div class="countdown-number" id="countdown-num">3</div>
+</div>
+
+<!-- Game Screen -->
+<div id="game-screen" class="screen">
+  <div class="game-hud">
+    <div class="hud-score">スコア: <span id="hud-score">0</span></div>
+    <div class="hud-combo" id="hud-combo"></div>
+    <div class="hud-progress" id="hud-progress">Q1 / 15</div>
+  </div>
+  <div class="timer-bar"><div class="timer-bar-fill" id="timer-bar-fill"></div></div>
+
+  <div class="question-area">
+    <div class="q-category" id="q-category">カテゴリ</div>
+    <div class="q-main-text" id="q-main-text">問題文</div>
+    <div class="q-compare">
+      <div class="q-value-box">
+        <div class="q-value-label" id="q-ref-label">基準</div>
+        <div class="q-value-num" id="q-ref-value">100</div>
+      </div>
+      <div class="q-vs">VS</div>
+      <div class="q-value-box q-value-unknown">
+        <div class="q-value-label" id="q-ask-label">???</div>
+        <div class="q-value-num" id="q-ask-value">？</div>
+      </div>
+    </div>
+    <div class="q-hint" id="q-hint"></div>
+  </div>
+
+  <div class="choices-row">
+    <div class="choice-btn" data-answer="high" id="btn-high">
+      <span class="choice-icon">⬆</span>
+      <span class="choice-label">ハイ</span>
+    </div>
+    <div class="choice-btn" data-answer="same" id="btn-same">
+      <span class="choice-icon">＝</span>
+      <span class="choice-label">同じ</span>
+    </div>
+    <div class="choice-btn" data-answer="low" id="btn-low">
+      <span class="choice-icon">⬇</span>
+      <span class="choice-label">ロー</span>
+    </div>
+  </div>
+</div>
+
+<!-- Result Screen -->
+<div id="result-screen" class="screen">
+  <div class="result-label">スコア</div>
+  <div class="result-score" id="result-score">0</div>
+  <div id="result-new-record" class="result-new-record" style="display:none">🎉 NEW RECORD!</div>
+  <div class="result-stats" id="result-stats"></div>
+  <div class="name-input-area" id="name-input-area">
+    <input type="text" id="player-name" placeholder="名前を入力" maxlength="10">
+    <button class="btn btn-primary" style="padding:12px 24px;font-size:1rem" id="save-btn" onclick="saveScore()">保存</button>
+  </div>
+  <div class="save-status" id="save-status"></div>
+  <div class="result-buttons">
+    <button class="btn-share" onclick="shareOnX()">𝕏 でシェア</button>
+    <button class="btn btn-primary" onclick="startGame()" style="padding:12px 36px;font-size:1rem">もう一回</button>
+    <button class="btn btn-secondary" onclick="showRanking()">🏆 ランキング</button>
+    <button class="btn btn-secondary" onclick="showTitle()">タイトルへ</button>
+  </div>
+</div>
+
+<!-- Ranking Screen -->
+<div id="ranking-screen" class="screen">
+  <div class="ranking-title">🏆 ランキング</div>
+  <div class="ranking-tabs">
+    <button class="ranking-tab active" id="tab-global" onclick="switchRankingTab('global')">🌍 全員</button>
+    <button class="ranking-tab" id="tab-local" onclick="switchRankingTab('local')">📱 自分</button>
+  </div>
+  <div class="ranking-list" id="ranking-list"></div>
+  <button class="btn btn-secondary" onclick="showTitle()" style="margin-top:16px">戻る</button>
+</div>
+
+<script>
+// ========================================
+// AUDIO ENGINE
+// ========================================
+let audioCtx = null;
+let soundEnabled = true;
+
+function initAudio() {
+  if (audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+}
+
+function toggleSound() {
+  soundEnabled = !soundEnabled;
+  document.getElementById('sound-toggle').textContent = soundEnabled ? '🔊' : '🔇';
+}
+
+function playSE(type) {
+  if (!soundEnabled || !audioCtx) return;
+  const now = audioCtx.currentTime;
+
+  if (type === 'correct') {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(660, now);
+    osc.frequency.linearRampToValueAtTime(880, now + 0.08);
+    osc.frequency.linearRampToValueAtTime(1100, now + 0.15);
+    gain.gain.setValueAtTime(0.25, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start(now); osc.stop(now + 0.25);
+
+    const osc2 = audioCtx.createOscillator();
+    const gain2 = audioCtx.createGain();
+    osc2.type = 'triangle';
+    osc2.frequency.setValueAtTime(880, now + 0.03);
+    osc2.frequency.linearRampToValueAtTime(1320, now + 0.15);
+    gain2.gain.setValueAtTime(0.12, now + 0.03);
+    gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+    osc2.connect(gain2).connect(audioCtx.destination);
+    osc2.start(now + 0.03); osc2.stop(now + 0.3);
+  } else if (type === 'wrong') {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(300, now);
+    osc.frequency.linearRampToValueAtTime(100, now + 0.3);
+    gain.gain.setValueAtTime(0.2, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start(now); osc.stop(now + 0.35);
+  } else if (type === 'countdown') {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(523, now);
+    gain.gain.setValueAtTime(0.2, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start(now); osc.stop(now + 0.2);
+  } else if (type === 'go') {
+    [523, 659, 784, 1047].forEach((freq, i) => {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, now + i * 0.06);
+      gain.gain.setValueAtTime(0.2, now + i * 0.06);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.06 + 0.3);
+      osc.connect(gain).connect(audioCtx.destination);
+      osc.start(now + i * 0.06); osc.stop(now + i * 0.06 + 0.3);
+    });
+  } else if (type === 'combo') {
+    [1200, 1500, 1800].forEach((freq, i) => {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, now + i * 0.05);
+      gain.gain.setValueAtTime(0.12, now + i * 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.05 + 0.2);
+      osc.connect(gain).connect(audioCtx.destination);
+      osc.start(now + i * 0.05); osc.stop(now + i * 0.05 + 0.2);
+    });
+  } else if (type === 'newrecord') {
+    [523, 659, 784, 1047, 784, 1047, 1319].forEach((freq, i) => {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = i % 2 === 0 ? 'sine' : 'triangle';
+      osc.frequency.setValueAtTime(freq, now + i * 0.1);
+      gain.gain.setValueAtTime(0.18, now + i * 0.1);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.1 + 0.25);
+      osc.connect(gain).connect(audioCtx.destination);
+      osc.start(now + i * 0.1); osc.stop(now + i * 0.1 + 0.25);
+    });
+  } else if (type === 'click') {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(800, now);
+    gain.gain.setValueAtTime(0.08, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start(now); osc.stop(now + 0.06);
+  } else if (type === 'reveal') {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(440, now);
+    osc.frequency.linearRampToValueAtTime(660, now + 0.15);
+    gain.gain.setValueAtTime(0.15, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start(now); osc.stop(now + 0.2);
+  }
+}
+
+// ========================================
+// QUESTION DATABASE
+// ========================================
+const questions = [
+  // === 歴史・将軍 ===
+  { category: '🏯 歴史', question: '彳川家康が征大大将軍になった年は？', refLabel: '基準', refValue: 1600, askLabel: '家康の将軍就任', askValue: 1603, hint: '関ヶ原の戦いは1600年', unit: '年' },
+  { category: '🏯 歴史', question: '彳川紱吉（5代）と徳川吉宗（8代）、将軍就任が早いのは？', refLabel: '吉宗', refValue: 1716, askLabel: '綱合', askValue: 1680, hint: '生類憐みの令 vs 享保の改革', unit: '年' },
+  { category: '🏯 歴史', question: '織田信長の本能寺の変は何年？', refLabel: '基準', refValue: 1580, askLabel: '本能寺の変', askValue: 1582, hint: '戦国時代のクライマックス', unit: '年' },
+  { category: '🏯 歴史', question: '豊臣秀吉の天下統一は何年？', refLabel: '基準', refValue: 1588, askLabel: '天下統一', askValue: 1590, hint: '小田原征伐で完了', unit: '年' },
+  { category: '🏯 歴史', question: '参勤交代が制度化されたのは？', refLabel: '基準', refValue: 1640, askLabel: '参勤交代', askValue: 1635, hint: '3代将軍家光の時代', unit: '年' },
+  { category: '🏯 歴史', question: 'ペリー来航は何年？', refLabel: '基準', refValue: 1850, askLabel: 'ペリー来航', askValue: 1853, hint: '「太平の眠りを観ます...」', unit: '年' },
+
+  // === スポーツ ===
+  { category: '⚽ スポーツ', question: 'サッカーのゴールの横幅は？', refLabel: '基準', refValue: 7, askLabel: 'ゴールの横幅', askValue: 7.32, hint: '高さは2.44m', unit: 'm' },
+  { category: '🏀 スポーツ', question: 'バスケットのゴール（リング）の直径は？', refLabel: '基準', refValue: 50, askLabel: 'リングの直径', askValue: 45, hint: 'ボールの直径は約24cm', unit: 'cm' },
+  { category: '🏀 スポーツ', question: 'バスケットのゴールの高さは？', refLabel: '基準', refValue: 3, askLabel: 'ゴールの高さ', askValue: 3.05, hint: '約10フィート', unit: 'm' },
+  { category: '⚾ スポーツ', question: '野珃のホームからピッチャーマウンドの距離は？', refLabel: '基準', refValue: 20, askLabel: 'マウンドの距離', askValue: 18.44, hint: '60フィート4インチ', unit: 'm' },
+  { category: '⚾ スポーツ', question: '野球の塁間の距離は？', refLabel: '基準', refValue: 30, askLabel: '塁間の距離', askValue: 27.431, hint: '90フィート', unit: 'm' },
+  { category: '🏐 スポーツ', question: 'バレーボールのネットの高さ（男子）は？', refLabel: '基準', refValue: 2.5, askLabel: 'ネット高（男子）', askValue: 2.43, hint: '女子は2.24m', unit: 'm' },
+  { category: '🎾 スポーツ', question: 'テニスのネットの高さ（中央）は？', refLabel: '基準', refValue: 1, askLabel: 'ネット中央', askValue: 0.914, hint: '3フィート', unit: 'm' },
+  { category: '🏊 スポーツ', question: 'オリンピックの競泳プールの長さは？', refLabel: '基準', refValue: 25, askLabel: 'プールの長さ', askValue: 50, hint: '短水路は25m', unit: 'm' },
+  { category: '🥊 スポーツ', question: 'ボクシングのリング一辺の長さは？', refLabel: '基準', refValue: 5, askLabel: 'リング一辺', askValue: 6.1, hint: '20フィート四方が標準', unit: 'm' },
+  { category: '⚽ スポーツ', question: 'サッカーW杯の第1回大会は何年？', refLabel: '基準', refValue: 1928, askLabel: '第1回W杯', askValue: 1930, hint: '開催国はウルグアイ', unit: '年' },
+  { category: '🏃 スポーツ', question: 'マラソンの距離は何km？', refLabel: '基準', refValue: 40, askLabel: 'マラソン', askValue: 42.195, hint: '約26マイル', unit: 'km' },
+
+  // === アニメ・映画の公開年 ===
+  { category: '🎬 アニメ', question: '「千と千尋の神隠し」の公開年は？', refLabel: '基準', refValue: 2000, askLabel: '千と千尋', askValue: 2001, hint: '宮崎駿監督作品', unit: '年' },
+  { category: '🎬 アニメ', question: '「もののけ姫」の公開年は？', refLabel: '基準', refValue: 1998, askLabel: 'もののけ姫', askValue: 1997, hint: '宮崎駿監督作品', unit: '年' },
+  { category: '🎬 アニメ', question: '「となりのトトロ」の公開年は？', refLabel: '基準', refValue: 1990, askLabel: 'トトロ', askValue: 1988, hint: '火垂るの墛と同時上映', unit: '年' },
+  { category: '🎬 アニメ', question: '「新世紀エヴァンゲリオン」TV放送開始年は？', refLabel: '基準', refValue: 1996, askLabel: 'エヴァ TV版', askValue: 1995, hint: '碀シンジ、14歳', unit: '年' },
+  { category: '🎬 アニメ', question: '「鬼滅の刃」TVアニメ放送開始年は？', refLabel: '基準', refValue: 2020, askLabel: '鬼滅の刃 TV', askValue: 2019, hint: '竈門炭治郎が主人公', unit: '年' },
+  { category: '🎬 アニメ', question: '「呪術廻戦」TVアニメ放送開始年は？', refLabel: '基準', refValue: 2019, askLabel: '呪術廻戦 TV', askValue: 2020, hint: '虎杖悠仁が主人公', unit: '年' },
+  { category: '🎬 映画', question: '「君の名は。」の公開年は？', refLabel: '基準', refValue: 2015, askLabel: '君の名は。', askValue: 2016, hint: '新海誠監督の大ヒット作', unit: '年' },
+  { category: '🎬 映画', question: '「タイタニック」の公開年は？', refLabel: '基準', refValue: 1996, askLabel: 'タイタニック', askValue: 1997, hint: 'レオナルド・ディカプリオ主演', unit: '年' },
+  { category: '🎬 映画', question: '映画「ドラえもん のび太の恐竜」第1作の公開年は？', refLabel: '基準', refValue: 1982, askLabel: 'のび太の恐竜', askValue: 1980, hint: 'ドラえもん映画シリーズ第1弾', unit: '年' },
+  { category: '🎬 アニメ', question: '「ONE PIECE」TVアニメ放送開始年は？', refLabel: '基準', refValue: 2000, askLabel: 'ワンピース TV', askValue: 1999, hint: '海賊王に俺はなる！', unit: '年' },
+  { category: '🎬 アニメ', question: '「NARUTO」TVアニメ放送開始年は？', refLabel: '基準', refValue: 2001, askLabel: 'ナルト TV', askValue: 2002, hint: '火影を目指す忍者の物語', unit: '年' },
+  { category: '🎬 アニメ', question: '「ドラゴンボール」TVアニメ放送開始年は？', refLabel: '基準', refValue: 1984, askLabel: 'ドラゴンボール', askValue: 1986, hint: '鳥山明先生の代表作', unit: '年' },
+  { category: '🎬 アニメ', question: '「スラムダンク」TVアニメ放送開始年は？', refLabel: '基準', refValue: 1992, askLabel: 'スラムダンク', askValue: 1993, hint: '天才ですから', unit: '年' },
+
+  // === キャラクター身長・年齢 ===
+  { category: '📏 キャラ身長', question: '「ONE PIECE」ルフィの身長は？', refLabel: '基準', refValue: 170, askLabel: 'ルフィ', askValue: 174, hint: 'ゴムゴムの実の能力者', unit: 'cm' },
+  { category: '📏 キャラ身長', question: '「ONE PIECE」ゾロの身長は？', refLabel: '基準', refValue: 175, askLabel: 'ゾロ', askValue: 181, hint: '三刀流の剣士', unit: 'cm' },
+  { category: '📏 キャラ身長', question: '「ドラゴンボール」悟空の身長は？', refLabel: '基準', refValue: 180, askLabel: '悟空', askValue: 175, hint: 'サイヤ人の戦士', unit: 'cm' },
+  { category: '📏 キャラ身長', question: '「鬼滅の刃」竈門炭治郎の身長は？', refLabel: '基準', refValue: 170, askLabel: '炭治郎', askValue: 165, hint: '水の呼吸の使い手', unit: 'cm' },
+  { category: '📏 キャラ身長', question: '「進撃の巨人」リヴァイ兵長の身長は？', refLabel: '基準', refValue: 170, askLabel: 'リヴァイ', askValue: 160, hint: '人類最強の兵士', unit: 'cm' },
+  { category: '📏 キャラ身長', question: '「名探偵コナン」毛利蘭の身長は？', refLabel: '基準', refValue: 160, askLabel: '毛利蘭', askValue: 164, hint: '空手の達人', unit: 'cm' },
+  { category: '🎂 キャラ年齢', question: '「サザエさん」のサザエさんは何歳？', refLabel: '基準', refValue: 25, askLabel: 'サザエさん', askValue: 24, hint: 'フグ田サザエ', unit: '歳' },
+  { category: '🎂 キャラ年齢', question: '「サザエさん」の波平さんは何歳？', refLabel: '基準', refValue: 56, askLabel: '波平', askValue: 54, hint: '磯野家の大黑柱', unit: '歳' },
+  { category: '🎂 キャラ年齢', question: '「クレヨンしんちゃん」のひろし（父）は何歳？', refLabel: '基準', refValue: 37, askLabel: 'ひろし', askValue: 35, hint: '野原家の大黒柱', unit: '歳' },
+  { category: '🎂 キャラ年齢', question: '「ドラぇもん」ドラぇもんの体重は？', refLabel: '基準', refValue: 100, askLabel: 'ドラえもん', askValue: 129.3, hint: '22世紀から来たネコ型ロボット', unit: 'kg' },
+
+  // === 一般教養・雑学 ===
+  { category: '🌍 雑学', question: '富士山の高さは？', refLabel: '基準', refValue: 3700, askLabel: '富士山', askValue: 3776, hint: '日本一高い山', unit: 'm' },
+  { category: '🌍 雑学', question: '東京タワーの高さは？', refLabel: '基準', refValue: 330, askLabel: '東京タワー', askValue: 333, hint: '1958年完成', unit: 'm' },
+  { category: '🌍 雑学', question: '東京スカイツリーの高さは？', refLabel: '基準', refValue: 640, askLabel: 'スカイツリー', askValue: 634, hint: '武蔵（ムサシ）にかけた語呂', unit: 'm' },
+  { category: '🌍 雑学', question: 'エベレストの高さは？', refLabel: '基準', refValue: 8800, askLabel: 'エベレスト', askValue: 8849, hint: '世界最高峰', unit: 'm' },
+  { category: '🌍 雑学', question: '月までの平均距離は？', refLabel: '基準', refValue: 40, askLabel: '月までの距離', askValue: 38, hint: '光で約1.3秒', unit: '万km' },
+  { category: '🌍 雑学', question: '太陽の直径は地球の何倍？', refLabel: '基準', refValue: 100, askLabel: '太陽の直径', askValue: 109, hint: '太陽系で最も大きい天体', unit: '倍' },
+  { category: '🌍 雑学', question: '光の速さは秒速約何万km？', refLabel: '基準', refValue: 30, askLabel: '光速', askValue: 30, hint: '宇宙最速', unit: '万km/s' },
+  { category: '🌍 雑学', question: '人体の骨の数は？', refLabel: '基準', refValue: 200, askLabel: '骨の数', askValue: 206, hint: '成人の場合', unit: '本' },
+  { category: '🌍 雑学', question: '人間の血液は体重の約何%？', refLabel: '基準', refValue: 10, askLabel: '血液の割合', askValue: 8, hint: '体重60kgなら約5リットル', unit: '%' },
+  { category: '🌍 雑学', question: '水の沸点（標準気圧）は？', refLabel: '基準', refValue: 100, askLabel: '水の沸点', askValue: 100, hint: '1気圧での温度', unit: '℃' },
+  { category: '🌍 雑学', question: '日本の都道府県の数は？', refLabel: '基準', refValue: 50, askLabel: '都道府県', askValue: 47, hint: '1都1道2府43県', unit: '' },
+  { category: '🌍 雑学', question: 'トランプ1組のカードの枚数は（ジョーカー除く）？', refLabel: '基準', refValue: 54, askLabel: 'トランプ', askValue: 52, hint: '4スート×13枚', unit: '枚' },
+
+  // === 芸能 ===
+  { category: '🎤 芸能', question: '「笑点」の放送開始年は？', refLabel: '基準', refValue: 1970, askLabel: '笑点', askValue: 1966, hint: '日テレの長寿番組', unit: '年' },
+  { category: '🎤 芸能', question: '「サザエさん」TVアニメ放送開始年は？', refLabel: '基準', refValue: 1968, askLabel: 'サザエさん', askValue: 1969, hint: 'フジテレビの国民的アニメ', unit: '年' },
+  { category: '🎤 芸能', question: '「紅白歌合戦」の第1回放送年は？', refLabel: '基準', refValue: 1950, askLabel: '第1回紅白', askValue: 1951, hint: 'NHKの年末恒例番組', unit: '年' },
+
+  // === 食べ物・生活 ===
+  { category: '🍔 食べ物', question: 'カップヌードルの発売年は？', refLabel: '基準', refValue: 1970, askLabel: 'カップヌードル', askValue: 1971, hint: '日清食品', unit: '年' },
+  { category: '🍔 食べ物', question: 'コカ・コーラが日本で発売された年は？', refLabel: '基準', refValue: 1960, askLabel: 'コカ・コーラ日本', askValue: 1957, hint: 'アメリカでの発売は1886年', unit: '年' },
+  { category: '🍔 食べ物', question: 'ポッキーの発売年は？', refLabel: '基準', refValue: 1965, askLabel: 'ポッキー', askValue: 1966, hint: '江崎グリコ', unit: '年' },
+  { category: '🍔 食べ物', question: 'バナナ1本のカロリーは約何kcal？', refLabel: '基準', refValue: 100, askLabel: 'バナナ', askValue: 86, hint: '手軽なエネルギー補給', unit: 'kcal' },
+
+  // === ゲーム ===
+  { category: '🎮 ゲーム', question: '初代ファミコンの発売年は？', refLabel: '基準', refValue: 1984, askLabel: 'ファミコン', askValue: 1983, hint: '任天堂の家庭用ゲーム機', unit: '年' },
+  { category: '🎮 ゲーム', question: '初代PlayStation の発売年は？', refLabel: '基準', refValue: 1993, askLabel: 'PS1', askValue: 1994, hint: 'ソニーの家庭用ゲーム機', unit: '年' },
+  { category: '🎮 ゲーム', question: 'Nintendo Switch の発売年は？', refLabel: '基準', refValue: 2016, askLabel: 'Switch', askValue: 2017, hint: '携帯と据え置きの螄合', unit: '年' },
+  { category: '🎮 ゲーム', question: '「スーパーマリオブラザーズ」初代の発売年は？', refLabel: '基準', refValue: 1984, askLabel: 'マリオ初代', askValue: 1985, hint: 'ファミコンの名作', unit: '年' },
+  { category: '🎮 ゲーム', question: '「ポケットモンスター 赤・緑」の発売年は？', refLabel: '基準', refValue: 1997, askLabel: 'ポケモン赤緑', askValue: 1996, hint: 'ゲームボーイのソフト', unit: '年' },
+  { category: '🎮 ゲーム', question: '「マインクラフト」の正式リリース年は？', refLabel: '基準', refValue: 2010, askLabel: 'マイクラ', askValue: 2011, hint: 'Mojang Studios', unit: '年' },
+
+  // === 地理 ===
+  { category: '🗺️ 地理', question: '日本の人口は約何億人？（2024年時点）', refLabel: '基準', refValue: 1.3, askLabel: '日本の人口', askValue: 1.24, hint: '減少傾向', unit: '億人' },
+  { category: '🗺️ 地理', question: '地球の赤道一周は約何万km？', refLabel: '基準', refValue: 4, askLabel: '赤道一周', askValue: 4, hint: '約4万km', unit: '万km' },
+  { category: '🗺️ 地理', question: '琴琶湖の面積は約何km²？', refLabel: '基準', refValue: 700, askLabel: '琵琶湖', askValue: 670, hint: '日本最大の湖', unit: 'km²' },
+  { category: '🗺️ 地理', question: '北海道の面積は約何万km²？', refLabel: '基準', refValue: 8, askLabel: '北海道', askValue: 8.3, hint: '日本最大の都道府県', unit: '万km²' },
+];
+
+// ========================================
+// GAME STATE
+// ========================================
+const TOTAL_QUESTIONS = 15;
+let score = 0, combo = 0, maxCombo = 0, correctCount = 0, questionNum = 0;
+let currentCorrectAnswer = null;
+let currentQuestion = null;
+let questionTimeout = null;
+let timerInterval = null;
+let gameActive = false;
+let usedQuestionIndices = [];
+
+// ========================================
+// SCREENS
+// ========================================
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function showTitle() {
+  showScreen('title-screen');
+  const best = getBestScore();
+  document.getElementById('best-score-display').textContent = best > 0 ? `ベストスコア: ${best}` : '';
+}
+
+// ========================================
+// GAME LOGIC
+// ========================================
+function startGame() {
+  initAudio();
+  score = 0; combo = 0; maxCombo = 0; correctCount = 0; questionNum = 0;
+  gameActive = false;
+  usedQuestionIndices = [];
+  showScreen('countdown-screen');
+  doCountdown(3);
+}
+
+function doCountdown(n) {
+  if (n <= 0) {
+    playSE('go');
+    gameActive = true;
+    showScreen('game-screen');
+    nextQuestion();
+    return;
+  }
+  const el = document.getElementById('countdown-num');
+  el.textContent = n;
+  el.style.animation = 'none';
+  el.offsetHeight;
+  el.style.animation = 'countPulse 0.6s ease-out';
+  playSE('countdown');
+  setTimeout(() => doCountdown(n - 1), 800);
+}
+
+function pickQuestion() {
+  const available = [];
+  for (let i = 0; i < questions.length; i++) {
+    if (!usedQuestionIndices.includes(i)) available.push(i);
+  }
+  if (available.length === 0) {
+    // Reset if we've used all questions
+    usedQuestionIndices = [];
+    for (let i = 0; i < questions.length; i++) available.push(i);
+  }
+  const idx = available[Math.floor(Math.random() * available.length)];
+  usedQuestionIndices.push(idx);
+  return questions[idx];
+}
+
+function getTimeLimit() {
+  // Start at 12s, decrease to 6s
+  const minTime = 6000;
+  const maxTime = 12000;
+  const decay = (maxTime - minTime) / TOTAL_QUESTIONS;
+  return Math.max(minTime, maxTime - questionNum * decay);
+}
+
+function nextQuestion() {
+  if (!gameActive) return;
+
+  if (questionNum >= TOTAL_QUESTIONS) {
+    gameActive = false;
+    setTimeout(() => showResult(), 300);
+    return;
+  }
+
+  questionNum++;
+  const q = pickQuestion();
+  currentQuestion = q;
+
+  // Determine correct answer
+  if (q.askValue > q.refValue) {
+    currentCorrectAnswer = 'high';
+  } else if (q.askValue < q.refValue) {
+    currentCorrectAnswer = 'low';
+  } else {
+    currentCorrectAnswer = 'same';
+  }
+
+  // Update HUD
+  document.getElementById('hud-score').textContent = score;
+  document.getElementById('hud-combo').textContent = combo > 1 ? `🔥 ${combo}コンボ` : '';
+  document.getElementById('hud-progress').textContent = `Q${questionNum} / ${TOTAL_QUESTIONS}`;
+
+  // Update question display
+  document.getElementById('q-category').textContent = q.category;
+  document.getElementById('q-main-text').textContent = q.question;
+  document.getElementById('q-ref-label').textContent = q.refLabel;
+  document.getElementById('q-ref-value').textContent = q.refValue + (q.unit || '');
+  document.getElementById('q-ask-label').textContent = q.askLabel;
+  document.getElementById('q-ask-value').textContent = '？';
+  document.getElementById('q-hint').textContent = '💡 ' + q.hint;
+
+  // Reset buttons
+  ['high', 'same', 'low'].forEach(a => {
+    const btn = document.getElementById('btn-' + a);
+    btn.classList.remove('correct', 'wrong');
+  });
+
+  // Remove any old answer reveal
+  document.querySelectorAll('.answer-reveal').forEach(e => e.remove());
+
+  // Timer
+  const timeLimit = getTimeLimit();
+  let timeLeft = timeLimit;
+  const timerFill = document.getElementById('timer-bar-fill');
+  timerFill.style.width = '100%';
+  timerFill.style.background = 'var(--accent2)';
+
+  clearInterval(timerInterval);
+  clearTimeout(questionTimeout);
+
+  timerInterval = setInterval(() => {
+    timeLeft -= 50;
+    const pct = Math.max(0, timeLeft / timeLimit * 100);
+    timerFill.style.width = pct + '%';
+    if (pct < 30) timerFill.style.background = 'var(--fail)';
+    else if (pct < 60) timerFill.style.background = 'var(--accent)';
+    else timerFill.style.background = 'var(--accent2)';
+  }, 50);
+
+  questionTimeout = setTimeout(() => onTimeout(), timeLimit);
+}
+
+function handleAnswer(answer) {
+  if (!gameActive || !currentCorrectAnswer) return;
+  clearTimeout(questionTimeout);
+  clearInterval(timerInterval);
+
+  const isCorrect = answer === currentCorrectAnswer;
+  const btn = document.getElementById('btn-' + answer);
+
+  // Reveal actual value
+  const q = currentQuestion;
+  document.getElementById('q-ask-value').textContent = q.askValue + (q.unit || '');
+
+  if (isCorrect) {
+    correctCount++;
+    combo++;
+    if (combo > maxCombo) maxCombo = combo;
+
+    const baseScore = 100;
+    const comboBonus = Math.min(combo * 10, 100);
+    score += baseScore + comboBonus;
+
+    btn.classList.add('correct');
+    showFlash('correct');
+    playSE('correct');
+
+    // Show answer
+    showAnswerReveal(q, true);
+
+    if (combo > 0 && combo % 5 === 0) {
+      showComboPopup(`${combo}コンボ!`);
+      playSE('combo');
+    } else if (combo === 3) {
+      showComboPopup('🔥');
+      playSE('combo');
+    }
+
+    currentCorrectAnswer = null;
+    setTimeout(() => nextQuestion(), 1200);
+  } else {
+    combo = 0;
+    btn.classList.add('wrong');
+    document.getElementById('btn-' + currentCorrectAnswer).classList.add('correct');
+    showFlash('wrong');
+    playSE('wrong');
+
+    showAnswerReveal(q, false);
+
+    currentCorrectAnswer = null;
+    setTimeout(() => nextQuestion(), 1500);
+  }
+}
+
+function onTimeout() {
+  clearInterval(timerInterval);
+  combo = 0;
+
+  showFlash('wrong');
+  playSE('wrong');
+
+  const q = currentQuestion;
+  document.getElementById('q-ask-value').textContent = q.askValue + (q.unit || '');
+  document.getElementById('btn-' + currentCorrectAnswer).classList.add('correct');
+  showAnswerReveal(q, false);
+
+  currentCorrectAnswer = null;
+  setTimeout(() => nextQuestion(), 1500);
+}
+
+function showAnswerReveal(q, isCorrect) {
+  const div = document.createElement('div');
+  div.className = 'answer-reveal';
+  const symbol = isCorrect ? '⭕' : '❌';
+  div.textContent = `${symbol} 笔え: ${q.askValue}${q.unit || ''}`;
+  document.getElementById('game-screen').appendChild(div);
+  playSE('reveal');
+}
+
+function showFlash(type) {
+  const div = document.createElement('div');
+  div.className = `flash-overlay flash-${type}`;
+  document.body.appendChild(div);
+  setTimeout(() => div.remove(), 300);
+}
+
+function showComboPopup(text) {
+  const div = document.createElement('div');
+  div.className = 'combo-popup';
+  div.textContent = text;
+  document.body.appendChild(div);
+  setTimeout(() => div.remove(), 800);
+}
+
+// ========================================
+// RESULTS
+// ========================================
+function showResult() {
+  showScreen('result-screen');
+  document.getElementById('result-score').textContent = score;
+  document.getElementById('result-stats').innerHTML =
+    `正諣数: ${correctCount} / ${TOTAL_QUESTIONS}<br>最大コンボ: ${maxCombo}`;
+
+  const best = getBestScore();
+  if (score > best && score > 0) {
+    document.getElementById('result-new-record').style.display = 'block';
+    playSE('newrecord');
+  } else {
+    document.getElementById('result-new-record').style.display = 'none';
+  }
+
+  const lastName = localStorage.getItem('halLastName') || '';
+  document.getElementById('player-name').value = lastName;
+  document.getElementById('save-status').textContent = '';
+  document.getElementById('save-btn').disabled = false;
+  document.getElementById('save-btn').textContent = '保存';
+}
+
+// ========================================
+// X SHARE
+// ========================================
+function shareOnX() {
+  const text = `🃏 HiGH&LOW クイズで ${score}点 獲得！\n正解数: ${correctCount}/${TOTAL_QUESTIONS} | 最大コンボ: ${maxCombo}\nみんなうろ覚えしてることをクイズで当てよう！\n`;
+  const url = 'https://hitokoto-dev.github.io/high-and-low/';
+  const shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
+  window.open(shareUrl, '_blank');
+}
+
+// ========================================
+// SUPABASE
+// ========================================
+const SUPABASE_URL = 'https://mvnhojzeshbquobffkmq.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im12bmhvanplc2hicXVvYmZma21xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0MjQ4NzgsImV4cCI6MjA4ODAwMDg3OH0.kJNoHqJpmC5PLuojOGrnmWBT4TMZG5HbIv7bFY1D3QI';
+
+async function supabaseFetch(path, options = {}) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    ...options,
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json',
+      'Prefer': options.prefer || '',
+      ...options.headers,
+    },
+  });
+  if (!res.ok) throw new Error(`Supabase error: ${res.status}`);
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
+}
+
+// ========================================
+// RANKING
+// ========================================
+let currentRankingTab = 'global';
+
+function getLocalRankings() {
+  try { return JSON.parse(localStorage.getItem('halRankings') || '[]'); }
+  catch { return []; }
+}
+
+function getBestScore() {
+  const rankings = getLocalRankings();
+  return rankings.length > 0 ? Math.max(...rankings.map(r => r.score)) : 0;
+}
+
+async function saveScore() {
+  initAudio();
+  playSE('click');
+  const name = document.getElementById('player-name').value.trim() || 'プレイヤー';
+  localStorage.setItem('halLastName', name);
+
+  const saveBtn = document.getElementById('save-btn');
+  const statusEl = document.getElementById('save-status');
+  saveBtn.disabled = true;
+  saveBtn.textContent = '保存中...';
+  statusEl.textContent = '';
+
+  // localStorage
+  const rankings = getLocalRankings();
+  rankings.push({
+    name, score, correct: correctCount, maxCombo,
+    date: new Date().toLocaleDateString('ja-JP'),
+  });
+  rankings.sort((a, b) => b.score - a.score);
+  if (rankings.length > 50) rankings.length = 50;
+  localStorage.setItem('halRankings', JSON.stringify(rankings));
+
+  // Supabase
+  try {
+    await supabaseFetch('high_and_low_scores', {
+      method: 'POST',
+      prefer: 'return=minimal',
+      body: JSON.stringify({
+        name,
+        score,
+        combo: maxCombo,
+        questions: correctCount,
+      }),
+    });
+    statusEl.textContent = '✅ グローバルランキングに保存しました！';
+    statusEl.style.color = 'var(--success)';
+  } catch (e) {
+    console.error('Supabase save error:', e);
+    statusEl.textContent = '⚠️ オンライン保存に失攗（ローカルには保存済み）';
+    statusEl.style.color = 'var(--accent)';
+  }
+
+  saveBtn.disabled = false;
+  saveBtn.textContent = '保存';
+}
+
+function switchRankingTab(tab) {
+  currentRankingTab = tab;
+  document.getElementById('tab-global').classList.toggle('active', tab === 'global');
+  document.getElementById('tab-local').classList.toggle('active', tab === 'local');
+  if (tab === 'global') showGlobalRanking();
+  else showLocalRanking();
+}
+
+function showRanking() {
+  showScreen('ranking-screen');
+  if (currentRankingTab === 'global') showGlobalRanking();
+  else showLocalRanking();
+}
+
+async function showGlobalRanking() {
+  const list = document.getElementById('ranking-list');
+  list.innerHTML = '<div class="ranking-loading"><span class="spinner"></span>読み込み中...</div>';
+  try {
+    const data = await supabaseFetch('high_and_low_scores?select=name,score,combo,questions,created_at&order=score.desc&limit=50');
+    if (!data || data.length === 0) {
+      list.innerHTML = '<div style="text-align:center;color:var(--dim);padding:40px">まだ記録がありません</div>';
+      return;
+    }
+    list.innerHTML = data.map((r, i) => {
+      const date = r.created_at ? new Date(r.created_at).toLocaleDateString('ja-JP') : '';
+      return `
+        <div class="ranking-item">
+          <div class="rank-num ${i < 3 ? 'rank-' + (i+1) : ''}">${i === 0 ? '👑' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i+1)}</div>
+          <div class="rank-name">${escHtml(r.name)}</div>
+          <div>
+            <div class="rank-score">${r.score}pt</div>
+            <div class="rank-date">${r.questions || '?'}問正解 | 🔥${r.combo || 0} | ${date}</div>
+          </div>
+        </div>`;
+    }).join('');
+  } catch (e) {
+    list.innerHTML = '<div style="text-align:center;color:var(--accent);padding:40px">⚠️ 読み込みに失敗しました<br><small>ローカルランキングをご覧ください</small></div>';
+  }
+}
+
+function showLocalRanking() {
+  const rankings = getLocalRankings();
+  const list = document.getElementById('ranking-list');
+  if (rankings.length === 0) {
+    list.innerHTML = '<div style="text-align:center;color:var(--dim);padding:40px">まだ記録がありません</div>';
+    return;
+  }
+  list.innerHTML = rankings.map((r, i) => `
+    <div class="ranking-item">
+      <div class="rank-num ${i < 3 ? 'rank-' + (i+1) : ''}">${i === 0 ? '👑' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i+1)}</div>
+      <div class="rank-name">${escHtml(r.name)}</div>
+      <div>
+        <div class="rank-score">${r.score}pt</div>
+        <div class="rank-date">${r.correct || '?'}問正解 | ${r.date}</div>
+      </div>
+    </div>`).join('');
+}
+
+function escHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+// ========================================
+// INPUT
+// ========================================
+document.querySelectorAll('.choice-btn').forEach(btn => {
+  btn.addEventListener('click', () => handleAnswer(btn.dataset.answer));
+  btn.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    handleAnswer(btn.dataset.answer);
+  }, { passive: false });
+});
+
+document.addEventListener('keydown', (e) => {
+  if (!gameActive) {
+    if (e.key === 'Enter' && document.getElementById('title-screen').classList.contains('active')) {
+      startGame();
+    }
+    return;
+  }
+  if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A' || e.key === '1') {
+    e.preventDefault(); handleAnswer('high');
+  } else if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S' || e.key === '2') {
+    e.preventDefault(); handleAnswer('same');
+  } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D' || e.key === '3') {
+    e.preventDefault(); handleAnswer('low');
+  }
+});
+
+// Init
+showTitle();
+</script>
+</body>
+</html>
