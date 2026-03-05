@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>🃏 HiGH&LOW クイズ</title>
-<meta name="description" content="みんなうろ覚えしてることをHiGH&LOWで当てるクイズゲーム！">
+<meta name="description" content="みんなうろ覛えしてることをHiGH&LOWで当てるクイズゲーム！">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Zen+Maru+Gothic:wght@700;900&display=swap');
 
@@ -218,42 +218,13 @@ body {
   justify-content: center;
 }
 
-.q-compare {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin: 8px 0;
-}
-
-.q-value-box {
-  background: var(--card);
-  border: 2px solid rgba(255,255,255,0.15);
-  border-radius: 16px;
-  padding: 12px 20px;
-  text-align: center;
-  min-width: 100px;
-}
-.q-value-label {
-  font-size: clamp(0.7rem, 1.8vw, 0.85rem);
-  color: var(--dim);
-  margin-bottom: 4px;
-}
-.q-value-num {
-  font-size: clamp(1.6rem, 5vw, 2.5rem);
+.q-ref-inline {
+  font-size: clamp(2.2rem, 7vw, 3.5rem);
   font-weight: 900;
   color: var(--accent2);
-}
-.q-value-unknown .q-value-num {
-  background: linear-gradient(135deg, var(--high), var(--low));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.q-vs {
-  font-size: clamp(1.2rem, 3vw, 1.8rem);
-  font-weight: 900;
-  color: var(--same);
+  text-align: center;
+  margin: 8px 0 4px;
+  text-shadow: 0 0 20px rgba(0,229,255,0.3);
 }
 
 .q-hint {
@@ -263,37 +234,37 @@ body {
   margin-top: 4px;
 }
 
-/* ===== 3-Choice Buttons ===== */
-.choices-row {
+/* ===== 3-Choice Buttons (Vertical) ===== */
+.choices-col {
   display: flex;
+  flex-direction: column;
   gap: 8px;
   width: 100%;
-  max-width: 420px;
-  padding: 0 8px 20px;
+  max-width: 360px;
+  padding: 0 16px 20px;
 }
 
 .choice-btn {
-  flex: 1;
   border: 2px solid rgba(255,255,255,0.15);
   border-radius: 16px;
   background: var(--card);
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
   justify-content: center;
-  padding: 16px 8px;
+  padding: 14px 20px;
   cursor: pointer;
   transition: all 0.12s;
   -webkit-tap-highlight-color: transparent;
-  gap: 4px;
+  gap: 10px;
 }
 .choice-btn:active { transform: scale(0.92); }
 
 .choice-icon {
-  font-size: clamp(1.8rem, 6vw, 2.8rem);
+  font-size: clamp(1.4rem, 4vw, 2rem);
 }
 .choice-label {
-  font-size: clamp(0.85rem, 2.2vw, 1.1rem);
+  font-size: clamp(1rem, 2.8vw, 1.3rem);
   font-weight: 900;
 }
 
@@ -580,21 +551,11 @@ body {
   <div class="question-area">
     <div class="q-category" id="q-category">カテゴリ</div>
     <div class="q-main-text" id="q-main-text">問題文</div>
-    <div class="q-compare">
-      <div class="q-value-box">
-        <div class="q-value-label" id="q-ref-label">基準</div>
-        <div class="q-value-num" id="q-ref-value">100</div>
-      </div>
-      <div class="q-vs">VS</div>
-      <div class="q-value-box q-value-unknown">
-        <div class="q-value-label" id="q-ask-label">???</div>
-        <div class="q-value-num" id="q-ask-value">？</div>
-      </div>
-    </div>
+    <div class="q-ref-inline" id="q-ref-inline">100</div>
     <div class="q-hint" id="q-hint"></div>
   </div>
 
-  <div class="choices-row">
+  <div class="choices-col">
     <div class="choice-btn" data-answer="high" id="btn-high">
       <span class="choice-icon">⬆</span>
       <span class="choice-label">ハイ</span>
@@ -761,18 +722,18 @@ function playSE(type) {
 // ========================================
 const questions = [
   // === 歴史・将軍 ===
-  { category: '🏯 歴史', question: '彳川家康が征大大将軍になった年は？', refLabel: '基準', refValue: 1600, askLabel: '家康の将軍就任', askValue: 1603, hint: '関ヶ原の戦いは1600年', unit: '年' },
-  { category: '🏯 歴史', question: '彳川紱吉（5代）と徳川吉宗（8代）、将軍就任が早いのは？', refLabel: '吉宗', refValue: 1716, askLabel: '綱合', askValue: 1680, hint: '生類憐みの令 vs 享保の改革', unit: '年' },
+  { category: '🏯 歴史', question: '徳川家康が征夷大将軍になった年は？', refLabel: '基準', refValue: 1600, askLabel: '家康の将軍就任', askValue: 1603, hint: '関ヶ原の戦いは1600年', unit: '年' },
+  { category: '🏯 歴史', question: '徳川綱吉（5代）と徳川吉宗（8代）、将軍就任が早いのは？', refLabel: '吉宗', refValue: 1716, askLabel: '綱吉', askValue: 1680, hint: '生類憉みの令 vs 享保の改革', unit: '年' },
   { category: '🏯 歴史', question: '織田信長の本能寺の変は何年？', refLabel: '基準', refValue: 1580, askLabel: '本能寺の変', askValue: 1582, hint: '戦国時代のクライマックス', unit: '年' },
   { category: '🏯 歴史', question: '豊臣秀吉の天下統一は何年？', refLabel: '基準', refValue: 1588, askLabel: '天下統一', askValue: 1590, hint: '小田原征伐で完了', unit: '年' },
-  { category: '🏯 歴史', question: '参勤交代が制度化されたのは？', refLabel: '基準', refValue: 1640, askLabel: '参勤交代', askValue: 1635, hint: '3代将軍家光の時代', unit: '年' },
-  { category: '🏯 歴史', question: 'ペリー来航は何年？', refLabel: '基準', refValue: 1850, askLabel: 'ペリー来航', askValue: 1853, hint: '「太平の眠りを観ます...」', unit: '年' },
+  { category: '🏯 歴史', question: '参勤交代が制度化されたのは？', refLabel: '基準', refValue: 1640, askLabel: '参�k�交代', askValue: 1635, hint: '3代将軍家光の時代', unit: '年' },
+  { category: '🏯 歴史', question: 'ペリー来航は何年？', refLabel: '基準', refValue: 1850, askLabel: 'ペリー来航', askValue: 1853, hint: '「太平の眠りを覚ます...」', unit: '年' },
 
   // === スポーツ ===
   { category: '⚽ スポーツ', question: 'サッカーのゴールの横幅は？', refLabel: '基準', refValue: 7, askLabel: 'ゴールの横幅', askValue: 7.32, hint: '高さは2.44m', unit: 'm' },
   { category: '🏀 スポーツ', question: 'バスケットのゴール（リング）の直径は？', refLabel: '基準', refValue: 50, askLabel: 'リングの直径', askValue: 45, hint: 'ボールの直径は約24cm', unit: 'cm' },
   { category: '🏀 スポーツ', question: 'バスケットのゴールの高さは？', refLabel: '基準', refValue: 3, askLabel: 'ゴールの高さ', askValue: 3.05, hint: '約10フィート', unit: 'm' },
-  { category: '⚾ スポーツ', question: '野珃のホームからピッチャーマウンドの距離は？', refLabel: '基準', refValue: 20, askLabel: 'マウンドの距離', askValue: 18.44, hint: '60フィート4インチ', unit: 'm' },
+  { category: '⚾ スポーツ', question: '野球のホームからピッチャーマウンドの距離は？', refLabel: '基準', refValue: 20, askLabel: 'マウンドの距離', askValue: 18.44, hint: '60フィート6インチ', unit: 'm' },
   { category: '⚾ スポーツ', question: '野球の塁間の距離は？', refLabel: '基準', refValue: 30, askLabel: '塁間の距離', askValue: 27.431, hint: '90フィート', unit: 'm' },
   { category: '🏐 スポーツ', question: 'バレーボールのネットの高さ（男子）は？', refLabel: '基準', refValue: 2.5, askLabel: 'ネット高（男子）', askValue: 2.43, hint: '女子は2.24m', unit: 'm' },
   { category: '🎾 スポーツ', question: 'テニスのネットの高さ（中央）は？', refLabel: '基準', refValue: 1, askLabel: 'ネット中央', askValue: 0.914, hint: '3フィート', unit: 'm' },
@@ -784,10 +745,10 @@ const questions = [
   // === アニメ・映画の公開年 ===
   { category: '🎬 アニメ', question: '「千と千尋の神隠し」の公開年は？', refLabel: '基準', refValue: 2000, askLabel: '千と千尋', askValue: 2001, hint: '宮崎駿監督作品', unit: '年' },
   { category: '🎬 アニメ', question: '「もののけ姫」の公開年は？', refLabel: '基準', refValue: 1998, askLabel: 'もののけ姫', askValue: 1997, hint: '宮崎駿監督作品', unit: '年' },
-  { category: '🎬 アニメ', question: '「となりのトトロ」の公開年は？', refLabel: '基準', refValue: 1990, askLabel: 'トトロ', askValue: 1988, hint: '火垂るの墛と同時上映', unit: '年' },
-  { category: '🎬 アニメ', question: '「新世紀エヴァンゲリオン」TV放送開始年は？', refLabel: '基準', refValue: 1996, askLabel: 'エヴァ TV版', askValue: 1995, hint: '碀シンジ、14歳', unit: '年' },
-  { category: '🎬 アニメ', question: '「鬼滅の刃」TVアニメ放送開始年は？', refLabel: '基準', refValue: 2020, askLabel: '鬼滅の刃 TV', askValue: 2019, hint: '竈門炭治郎が主人公', unit: '年' },
-  { category: '🎬 アニメ', question: '「呪術廻戦」TVアニメ放送開始年は？', refLabel: '基準', refValue: 2019, askLabel: '呪術廻戦 TV', askValue: 2020, hint: '虎杖悠仁が主人公', unit: '年' },
+  { category: '🎬 アニメ', question: '「となりのトトロ」の公開年は？', refLabel: '基準', refValue: 1990, askLabel: 'トトロ', askValue: 1988, hint: '火垂るの墓と同時上映', unit: '年' },
+  { category: '🎬 アニメ', question: '「新世紀エヴァンゲリオン」TV放送開始年は？', refLabel: '基準', refValue: 1996, askLabel: 'エヴァ TV版', askValue: 1995, hint: '碇シンジ、14歳', unit: '年' },
+  { category: '🎬 アニメ', question: '「鬼滅の刃」TVアニメ放送開始年は？', refLabel: '基準', refValue: 2020, askLabel: '鬼滅の刃 TV', askValue: 2019, hint: '竈門キ治郎が主人公', unit: '年' },
+  { category: '🎬 アニメ', question: '「呪術廻戦」TVアニメ放送開始年は？', refLabel: '基準', refValue: 2019, askLabel: '呪衔廻戦 TV', askValue: 2020, hint: '虎杖悠仁が主人公', unit: '年' },
   { category: '🎬 映画', question: '「君の名は。」の公開年は？', refLabel: '基準', refValue: 2015, askLabel: '君の名は。', askValue: 2016, hint: '新海誠監督の大ヒット作', unit: '年' },
   { category: '🎬 映画', question: '「タイタニック」の公開年は？', refLabel: '基準', refValue: 1996, askLabel: 'タイタニック', askValue: 1997, hint: 'レオナルド・ディカプリオ主演', unit: '年' },
   { category: '🎬 映画', question: '映画「ドラえもん のび太の恐竜」第1作の公開年は？', refLabel: '基準', refValue: 1982, askLabel: 'のび太の恐竜', askValue: 1980, hint: 'ドラえもん映画シリーズ第1弾', unit: '年' },
@@ -800,13 +761,13 @@ const questions = [
   { category: '📏 キャラ身長', question: '「ONE PIECE」ルフィの身長は？', refLabel: '基準', refValue: 170, askLabel: 'ルフィ', askValue: 174, hint: 'ゴムゴムの実の能力者', unit: 'cm' },
   { category: '📏 キャラ身長', question: '「ONE PIECE」ゾロの身長は？', refLabel: '基準', refValue: 175, askLabel: 'ゾロ', askValue: 181, hint: '三刀流の剣士', unit: 'cm' },
   { category: '📏 キャラ身長', question: '「ドラゴンボール」悟空の身長は？', refLabel: '基準', refValue: 180, askLabel: '悟空', askValue: 175, hint: 'サイヤ人の戦士', unit: 'cm' },
-  { category: '📏 キャラ身長', question: '「鬼滅の刃」竈門炭治郎の身長は？', refLabel: '基準', refValue: 170, askLabel: '炭治郎', askValue: 165, hint: '水の呼吸の使い手', unit: 'cm' },
+  { category: '📏 キャラ身長', question: '「鬼滅の刃」竈門灭治郎の身長は？', refLabel: '基準', refValue: 170, askLabel: '炭治郎', askValue: 165, hint: '水の呼吸の使い手', unit: 'cm' },
   { category: '📏 キャラ身長', question: '「進撃の巨人」リヴァイ兵長の身長は？', refLabel: '基準', refValue: 170, askLabel: 'リヴァイ', askValue: 160, hint: '人類最強の兵士', unit: 'cm' },
   { category: '📏 キャラ身長', question: '「名探偵コナン」毛利蘭の身長は？', refLabel: '基準', refValue: 160, askLabel: '毛利蘭', askValue: 164, hint: '空手の達人', unit: 'cm' },
   { category: '🎂 キャラ年齢', question: '「サザエさん」のサザエさんは何歳？', refLabel: '基準', refValue: 25, askLabel: 'サザエさん', askValue: 24, hint: 'フグ田サザエ', unit: '歳' },
-  { category: '🎂 キャラ年齢', question: '「サザエさん」の波平さんは何歳？', refLabel: '基準', refValue: 56, askLabel: '波平', askValue: 54, hint: '磯野家の大黑柱', unit: '歳' },
-  { category: '🎂 キャラ年齢', question: '「クレヨンしんちゃん」のひろし（父）は何歳？', refLabel: '基準', refValue: 37, askLabel: 'ひろし', askValue: 35, hint: '野原家の大黒柱', unit: '歳' },
-  { category: '🎂 キャラ年齢', question: '「ドラぇもん」ドラぇもんの体重は？', refLabel: '基準', refValue: 100, askLabel: 'ドラえもん', askValue: 129.3, hint: '22世紀から来たネコ型ロボット', unit: 'kg' },
+  { category: '🎂 キャラ年齢', question: '「サザエさん」の波平さんは何歳？', refLabel: '基準', refValue: 56, askLabel: '波平', askValue: 54, hint: '磧野家の大黒柱', unit: '歳' },
+  { category: '🎂 キャラ年齢', question: '「クレョンしんちゃん」のひろし（父）は何歳？', refLabel: '基準', refValue: 37, askLabel: 'ひろし', askValue: 35, hint: '野原家の大黒柱', unit: '歳' },
+  { category: '🎂 キャラ年齢', question: '「ドラえもん」ドラえもんの体重は？', refLabel: '基準', refValue: 100, askLabel: 'ドラえもん', askValue: 129.3, hint: '22世紀から来たネコ型ロボット', unit: 'kg' },
 
   // === 一般教養・雑学 ===
   { category: '🌍 雑学', question: '富士山の高さは？', refLabel: '基準', refValue: 3700, askLabel: '富士山', askValue: 3776, hint: '日本一高い山', unit: 'm' },
@@ -836,7 +797,7 @@ const questions = [
   // === ゲーム ===
   { category: '🎮 ゲーム', question: '初代ファミコンの発売年は？', refLabel: '基準', refValue: 1984, askLabel: 'ファミコン', askValue: 1983, hint: '任天堂の家庭用ゲーム機', unit: '年' },
   { category: '🎮 ゲーム', question: '初代PlayStation の発売年は？', refLabel: '基準', refValue: 1993, askLabel: 'PS1', askValue: 1994, hint: 'ソニーの家庭用ゲーム機', unit: '年' },
-  { category: '🎮 ゲーム', question: 'Nintendo Switch の発売年は？', refLabel: '基準', refValue: 2016, askLabel: 'Switch', askValue: 2017, hint: '携帯と据え置きの螄合', unit: '年' },
+  { category: '🎮 ゲーム', question: 'Nintendo Switch の発売年は？', refLabel: '基準', refValue: 2016, askLabel: 'Switch', askValue: 2017, hint: '携帯と据え置きの融合', unit: '年' },
   { category: '🎮 ゲーム', question: '「スーパーマリオブラザーズ」初代の発売年は？', refLabel: '基準', refValue: 1984, askLabel: 'マリオ初代', askValue: 1985, hint: 'ファミコンの名作', unit: '年' },
   { category: '🎮 ゲーム', question: '「ポケットモンスター 赤・緑」の発売年は？', refLabel: '基準', refValue: 1997, askLabel: 'ポケモン赤緑', askValue: 1996, hint: 'ゲームボーイのソフト', unit: '年' },
   { category: '🎮 ゲーム', question: '「マインクラフト」の正式リリース年は？', refLabel: '基準', refValue: 2010, askLabel: 'マイクラ', askValue: 2011, hint: 'Mojang Studios', unit: '年' },
@@ -844,7 +805,7 @@ const questions = [
   // === 地理 ===
   { category: '🗺️ 地理', question: '日本の人口は約何億人？（2024年時点）', refLabel: '基準', refValue: 1.3, askLabel: '日本の人口', askValue: 1.24, hint: '減少傾向', unit: '億人' },
   { category: '🗺️ 地理', question: '地球の赤道一周は約何万km？', refLabel: '基準', refValue: 4, askLabel: '赤道一周', askValue: 4, hint: '約4万km', unit: '万km' },
-  { category: '🗺️ 地理', question: '琴琶湖の面積は約何km²？', refLabel: '基準', refValue: 700, askLabel: '琵琶湖', askValue: 670, hint: '日本最大の湖', unit: 'km²' },
+  { category: '🗺️ 地理', question: '琵琶湖の面積は約何km²？', refLabel: '基準', refValue: 700, askLabel: '琵琶湖', askValue: 670, hint: '日本最大の湖', unit: 'km²' },
   { category: '🗺️ 地理', question: '北海道の面積は約何万km²？', refLabel: '基準', refValue: 8, askLabel: '北海道', askValue: 8.3, hint: '日本最大の都道府県', unit: '万km²' },
 ];
 
@@ -956,10 +917,7 @@ function nextQuestion() {
   // Update question display
   document.getElementById('q-category').textContent = q.category;
   document.getElementById('q-main-text').textContent = q.question;
-  document.getElementById('q-ref-label').textContent = q.refLabel;
-  document.getElementById('q-ref-value').textContent = q.refValue + (q.unit || '');
-  document.getElementById('q-ask-label').textContent = q.askLabel;
-  document.getElementById('q-ask-value').textContent = '？';
+  document.getElementById('q-ref-inline').textContent = q.refValue + (q.unit || '') + ' より…';
   document.getElementById('q-hint').textContent = '💡 ' + q.hint;
 
   // Reset buttons
@@ -1001,9 +959,7 @@ function handleAnswer(answer) {
   const isCorrect = answer === currentCorrectAnswer;
   const btn = document.getElementById('btn-' + answer);
 
-  // Reveal actual value
   const q = currentQuestion;
-  document.getElementById('q-ask-value').textContent = q.askValue + (q.unit || '');
 
   if (isCorrect) {
     correctCount++;
@@ -1053,7 +1009,6 @@ function onTimeout() {
   playSE('wrong');
 
   const q = currentQuestion;
-  document.getElementById('q-ask-value').textContent = q.askValue + (q.unit || '');
   document.getElementById('btn-' + currentCorrectAnswer).classList.add('correct');
   showAnswerReveal(q, false);
 
@@ -1065,7 +1020,7 @@ function showAnswerReveal(q, isCorrect) {
   const div = document.createElement('div');
   div.className = 'answer-reveal';
   const symbol = isCorrect ? '⭕' : '❌';
-  div.textContent = `${symbol} 笔え: ${q.askValue}${q.unit || ''}`;
+  div.textContent = `${symbol} 答え: ${q.askValue}${q.unit || ''}`;
   document.getElementById('game-screen').appendChild(div);
   playSE('reveal');
 }
@@ -1092,7 +1047,7 @@ function showResult() {
   showScreen('result-screen');
   document.getElementById('result-score').textContent = score;
   document.getElementById('result-stats').innerHTML =
-    `正諣数: ${correctCount} / ${TOTAL_QUESTIONS}<br>最大コンボ: ${maxCombo}`;
+    `正解数: ${correctCount} / ${TOTAL_QUESTIONS}<br>最大コンボ: ${maxCombo}`;
 
   const best = getBestScore();
   if (score > best && score > 0) {
@@ -1194,7 +1149,7 @@ async function saveScore() {
     statusEl.style.color = 'var(--success)';
   } catch (e) {
     console.error('Supabase save error:', e);
-    statusEl.textContent = '⚠️ オンライン保存に失攗（ローカルには保存済み）';
+    statusEl.textContent = '⚠️ オンライン保存に失敗（ローカルには保存済み）';
     statusEl.style.color = 'var(--accent)';
   }
 
