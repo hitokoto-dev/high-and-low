@@ -660,6 +660,111 @@ function initAudio() {
 function toggleSound() {
   soundEnabled = !soundEnabled;
   document.getElementById('sound-toggle').textContent = soundEnabled ? '🔊' : '🔇';
+  if (!soundEnabled) stopBGM();
+}
+
+// ========================================
+// BGM ENGINE (Web Audio API procedural)
+// ========================================
+let bgmNodes = [];
+let bgmInterval = null;
+let bgmPlaying = false;
+
+function startBGM() {
+  if (!audioCtx || !soundEnabled || bgmPlaying) return;
+  bgmPlaying = true;
+
+  // Create a gain node for BGM master volume
+  const masterGain = audioCtx.createGain();
+  masterGain.gain.setValueAtTime(0.07, audioCtx.currentTime);
+  masterGain.connect(audioCtx.destination);
+  bgmNodes.push(masterGain);
+
+  // Bass line pattern (looping)
+  const bassNotes = [130.81, 146.83, 164.81, 146.83, 130.81, 110.00, 123.47, 130.81]; // C3-D3-E3-D3-C3-A2-B2-C3
+  let bassIdx = 0;
+  const bpm = 128;
+  const beatMs = 60000 / bpm;
+
+  function playBeat() {
+    if (!bgmPlaying || !audioCtx) return;
+    const now = audioCtx.currentTime;
+
+    // Bass (sub)
+    const bassOsc = audioCtx.createOscillator();
+    const bassGain = audioCtx.createGain();
+    bassOsc.type = 'sine';
+    bassOsc.frequency.setValueAtTime(bassNotes[bassIdx % bassNotes.length], now);
+    bassGain.gain.setValueAtTime(0.5, now);
+    bassGain.gain.exponentialRampToValueAtTime(0.01, now + beatMs / 1000 * 0.9);
+    bassOsc.connect(bassGain).connect(masterGain);
+    bassOsc.start(now);
+    bassOsc.stop(now + beatMs / 1000);
+
+    // Hi-hat (noise burst) on every beat
+    const bufferSize = audioCtx.sampleRate * 0.03;
+    const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const data = noiseBuffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+    const noiseSrc = audioCtx.createBufferSource();
+    noiseSrc.buffer = noiseBuffer;
+    const hihatGain = audioCtx.createGain();
+    const hihatFilter = audioCtx.createBiquadFilter();
+    hihatFilter.type = 'highpass';
+    hihatFilter.frequency.setValueAtTime(8000, now);
+    hihatGain.gain.setValueAtTime(0.3, now);
+    hihatGain.gain.exponentialRampToValueAtTime(0.01, now + 0.03);
+    noiseSrc.connect(hihatFilter).connect(hihatGain).connect(masterGain);
+    noiseSrc.start(now);
+
+    // Chord pad every 4 beats
+    if (bassIdx % 4 === 0) {
+      const chordFreqs = bassIdx % 8 < 4
+        ? [261.63, 329.63, 392.00]  // C major
+        : [220.00, 277.18, 329.63]; // A minor
+      chordFreqs.forEach(freq => {
+        const padOsc = audioCtx.createOscillator();
+        const padGain = audioCtx.createGain();
+        padOsc.type = 'triangle';
+        padOsc.frequency.setValueAtTime(freq, now);
+        padGain.gain.setValueAtTime(0.15, now);
+        padGain.gain.setValueAtTime(0.15, now + beatMs * 3.5 / 1000);
+        padGain.gain.exponentialRampToValueAtTime(0.001, now + beatMs * 4 / 1000);
+        padOsc.connect(padGain).connect(masterGain);
+        padOsc.start(now);
+        padOsc.stop(now + beatMs * 4 / 1000);
+      });
+    }
+
+    // Kick on beats 0,2 (every 2 beats)
+    if (bassIdx % 2 === 0) {
+      const kickOsc = audioCtx.createOscillator();
+      const kickGain = audioCtx.createGain();
+      kickOsc.type = 'sine';
+      kickOsc.frequency.setValueAtTime(150, now);
+      kickOsc.frequency.exponentialRampToValueAtTime(30, now + 0.1);
+      kickGain.gain.setValueAtTime(0.6, now);
+      kickGain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+      kickOsc.connect(kickGain).connect(masterGain);
+      kickOsc.start(now);
+      kickOsc.stop(now + 0.15);
+    }
+
+    bassIdx++;
+  }
+
+  playBeat();
+  bgmInterval = setInterval(playBeat, beatMs);
+}
+
+function stopBGM() {
+  bgmPlaying = false;
+  if (bgmInterval) {
+    clearInterval(bgmInterval);
+    bgmInterval = null;
+  }
+  bgmNodes.forEach(n => { try { n.disconnect(); } catch(e) {} });
+  bgmNodes = [];
 }
 
 function playSE(type) {
@@ -782,8 +887,8 @@ const COMP_LABELS = {
 const questions = [
   // === 歴史・将軍 ===
   { category: '🏯 歴史', question: '徳川家康が征夷大将軍になった年は？', refName: '関ヶ原の戦い', refValue: 1600, askLabel: '家康の将軍就任', askValue: 1603, hint: '天下分け目の戦いの後', unit: '年', comp: 'year' },
-  { category: '🏯 歴史', question: '徳川綱吉（5代）の将軍就任は？', refName: '吉宗の就任', refValue: 1716, askLabel: '綱吉の就任', askValue: 1680, hint: '生類恐みの代 vs 享保の改革', unit: '年', comp: 'year' },
-  { category: '🏯 歴史', question: '純田信長の本能寺の変は何年？', refName: '長篠の戦い', refValue: 1575, askLabel: '本能寺の変', askValue: 1582, hint: '戦国時代のクライマックス', unit: '年', comp: 'year' },
+  { category: '🏯 歴史', question: '徳巜綱吉（5代）の将軍就任は？', refName: '吉宗の就任', refValue: 1716, askLabel: '綱吉の就任', askValue: 1680, hint: '生類恐みの令 vs 享保の改革', unit: '年', comp: 'year' },
+  { category: '🏯 歴史', question: '織田信長の本能寺の変は何年？', refName: '長篠の戦い', refValue: 1575, askLabel: '本能寺の変', askValue: 1582, hint: '戦国時代のクライマックス', unit: '年', comp: 'year' },
   { category: '🏯 歴史', question: '豊膣秀吉の天下統一は何年？', refName: '本能寺の変', refValue: 1582, askLabel: '天下統一', askValue: 1590, hint: '小田原征伐で完了', unit: '年', comp: 'year' },
   { category: '🏯 歴史', question: '参勤交代が制度化されたのは？', refName: '大坂夏の陣', refValue: 1615, askLabel: '参勤交代', askValue: 1635, hint: '3代将軍家光の時代', unit: '年', comp: 'year' },
   { category: '🏯 歴史', question: 'ペリー来航は何年？', refName: 'アヘン戦争', refValue: 1840, askLabel: 'ペリー来航', askValue: 1853, hint: '「太平の眠りを覚ます...」', unit: '年', comp: 'year' },
@@ -809,7 +914,7 @@ const questions = [
   { category: '🎬 アニメ', question: '「鬼滅の刃」TVアニメ放送開始年は？', refName: '呪術廻戦', refValue: 2020, askLabel: '鬼滅の刃 TV', askValue: 2019, hint: '竈門炭治郎が主人公', unit: '年', comp: 'year' },
   { category: '🎬 アニメ', question: '「呪術廻戦」TVアニメ放送開始年は？', refName: 'チェンソーマン', refValue: 2022, askLabel: '呪術廻戦 TV', askValue: 2020, hint: '虎杖悠仁が主人公', unit: '年', comp: 'year' },
   { category: '🎬 映画', question: '「君の名は。」の公開年は？', refName: 'シン・ゴジラ', refValue: 2016, askLabel: '君の名は。', askValue: 2016, hint: '新海誠監督の大ヒット作', unit: '年', comp: 'year' },
-  { category: '🎬 映画', question: '「タイタニック」の公開年は？', refName: 'ジュラシック・パーク', refValue: 1993, askLabel: 'タイタニック', askValue: 1997, hint: 'レオニルド・ディカプリオ主演', unit: '年', comp: 'year' },
+  { category: '🎬 映画', question: '「タイタニック」の公開年は？', refName: 'ジュラシック・パーク', refValue: 1993, askLabel: 'タイタニック', askValue: 1997, hint: 'レオナルド・ディカプリオ主演', unit: '年', comp: 'year' },
   { category: '🎬 映画', question: '映画「のび太の恐竜」第1作の公開年は？', refName: 'ドラえもん連載開始', refValue: 1970, askLabel: 'のび太の恐竜', askValue: 1980, hint: 'ドラえもん映画シリーズ第1弾', unit: '年', comp: 'year' },
   { category: '🎬 アニメ', question: '「ONE PIECE」TVアニメ放送開始年は？', refName: 'NARUTO', refValue: 2002, askLabel: 'ワンピース TV', askValue: 1999, hint: '海賊王に俺はなる！', unit: '年', comp: 'year' },
   { category: '🎬 アニメ', question: '「NARUTO」TVアニメ放送開始年は？', refName: 'BLEACH', refValue: 2004, askLabel: 'ナルト TV', askValue: 2002, hint: '火影を目指す忍者の物語', unit: '年', comp: 'year' },
@@ -840,11 +945,11 @@ const questions = [
   { category: '🌍 雑学', question: '人間の血液は体重の約何%？', refName: '水分の割合', refValue: 60, askLabel: '血液の割合', askValue: 8, hint: '体重60kgなら約5リットル', unit: '%', comp: 'many' },
   { category: '🌍 雑学', question: '水の沸点（標準気圧）は？', refName: 'エタノールの沸点', refValue: 78, askLabel: '水の沸点', askValue: 100, hint: '1気圧での温度', unit: '℃', comp: 'hot' },
   { category: '🌍 雑学', question: '日本の都道府県の数は？', refName: 'アメリカの州', refValue: 50, askLabel: '都道府県', askValue: 47, hint: '1都1道2府43県', unit: '', comp: 'many' },
-  { category: '🌍 雑学', question: 'トランプ1組の枚数は（ジョーカー除く）？', refName: '花札', refValue: 48, askLabel: 'トランプ', askValue: 52, hint: '4スート×13枚', unit: '枚', comp: 'many' },
+  { category: '🌍 雑学', question: 'トランプ1組の枚数は（ジョーカー除く）？', refName: '花札', refValue: 48, askLabel: 'トランプ', askValue: 52, hint: '4スーツ×13枚', unit: '枚', comp: 'many' },
 
   // === 芸能 ===
   { category: '🎤 芸能', question: '「笑点」の放送開始年は？', refName: 'サザエさん', refValue: 1969, askLabel: '笑点', askValue: 1966, hint: '日テレの長寿番組', unit: '年', comp: 'year' },
-  { category: '🎤 芸能', question: '「サザエさん」TVアニメ放送開始年は？', refName: 'ドラえもん(TV)', refValue: 1979, askLabel: 'サザエさん', askValue: 1969, hint: 'フジテレビの国民的アニメ', unit: '年', comp: 'year' },
+  { category: '🎤 芸能', question: '「サザエさん」TVアニメ放送開始年は？', refName: 'ドラえもん(TV)', refValue: 1979, askLabel: 'サザエさん', askValue: 1969, hint: 'フグテレビの国民的アニメ', unit: '年', comp: 'year' },
   { category: '🎤 芸能', question: '「紅白歌合戦」の第1回放送年は？', refName: '笑点', refValue: 1966, askLabel: '第1回紅白', askValue: 1951, hint: 'NHKの年末戒例番組', unit: '年', comp: 'year' },
 
   // === 食べ物・生活 ===
@@ -862,7 +967,7 @@ const questions = [
   { category: '🎮 ゲーム', question: '「マインクラフト」の正式リリース年は？', refName: 'フォートナイト', refValue: 2017, askLabel: 'マイクラ', askValue: 2011, hint: 'Mojang Studios', unit: '年', comp: 'year' },
 
   // === 地理 ===
-  { category: '🗺️ 地理', question: '日本の人口は約何億人？', refName: 'ドイツの人口', refValue: 0.83, askLabel: '日本の人口', askValue: 1.24, hint: '渜少傾向', unit: '億人', comp: 'many' },
+  { category: '🗺️ 地理', question: '日本の人口は約何億人？', refName: 'ドイツの人口', refValue: 0.83, askLabel: '日本の人口', askValue: 1.24, hint: '減少傾向', unit: '億人', comp: 'many' },
   { category: '🗺️ 地理', question: '地球の赤道一周は約何万km？', refName: '地球の直径', refValue: 1.27, askLabel: '赤道一周', askValue: 4, hint: '約4万km', unit: '万km', comp: 'long' },
   { category: '🗺️ 地理', question: '琵琶湖の面積は？', refName: '淡路島', refValue: 592, askLabel: '琵琶湖', askValue: 670, hint: '日本最大の湖', unit: 'km²', comp: 'wide' },
   { category: '🗺️ 地理', question: '北海道の面積は約何万km²？', refName: '九州', refValue: 3.6, askLabel: '北海道', askValue: 8.3, hint: '日本最大の都道府県', unit: '万km²', comp: 'wide' },
@@ -894,6 +999,7 @@ function showScreen(id) {
 }
 
 function showTitle() {
+  stopBGM();
   showScreen('title-screen');
   const bestEndless = getBestScore('endless');
   const bestSprint = getBestScore('sprint');
@@ -927,6 +1033,7 @@ function doCountdown(n) {
     gameActive = true;
     gameStartTimestamp = Date.now();
     showScreen('game-screen');
+    startBGM();
     nextQuestion();
     return;
   }
@@ -1161,6 +1268,7 @@ function showComboPopup(text) {
 // RESULTS
 // ========================================
 function showResult(cleared) {
+  stopBGM();
   showScreen('result-screen');
 
   const statusLabel = document.getElementById('result-status-label');
@@ -1226,7 +1334,8 @@ function shareOnX() {
 
 // ========================================
 // SUPABASE
-// ========================================const SUPABASE_URL = 'https://mvnhojzeshbquobffkmq.supabase.co';
+// ========================================
+const SUPABASE_URL = 'https://mvnhojzeshbquobffkmq.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im12bmhvanplc2hicXVvYmZma21xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0MjQ4NzgsImV4cCI6MjA4ODAwMDg3OH0.kJNoHqJpmC5PLuojOGrnmWBT4TMZG5HbIv7bFY1D3QI';
 
 async function supabaseFetch(path, options = {}) {
@@ -1395,7 +1504,7 @@ document.addEventListener('keydown', (e) => {
   } else if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S' || e.key === '2') {
     e.preventDefault(); handleAnswer('same');
   } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D' || e.key === '3') {
-    e.preventDefault(); handleAnswer('same');
+    e.preventDefault(); handleAnswer('low');
   }
 });
 
